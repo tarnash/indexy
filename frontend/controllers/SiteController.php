@@ -2,10 +2,14 @@
 
 namespace frontend\controllers;
 
+use common\models\Document;
+use common\models\DocumentElastic;
+use common\models\forms\SearchForm;
 use frontend\models\ResendVerificationEmailForm;
 use frontend\models\VerifyEmailForm;
 use Yii;
 use yii\base\InvalidArgumentException;
+use yii\data\ArrayDataProvider;
 use yii\web\BadRequestHttpException;
 use yii\web\Controller;
 use yii\filters\VerbFilter;
@@ -69,13 +73,31 @@ class SiteController extends Controller
     }
 
     /**
-     * Displays homepage.
+     * search.
      *
      * @return mixed
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        $results = [];
+        $form = new SearchForm();
+        if ($form->load(Yii::$app->request->post()) && $form->validate()) {
+            $results = DocumentElastic::find()
+                ->query(['multi_match' => [
+                    'query' => $form->query,
+                    'fields' => ['title', 'content']
+                ]])
+                ->all();
+        }
+        $dataProvider = new ArrayDataProvider([
+            'allModels' => $results,
+            'pagination' => ['pageSize' => 10],
+        ]);
+
+        return $this->render('index', [
+            'dataProvider' => $dataProvider,
+            'form' => $form,
+        ]);
     }
 
     /**
