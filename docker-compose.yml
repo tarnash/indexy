@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   php-backend:
     container_name: indexy-backend
@@ -10,8 +8,10 @@ services:
       # Re-use local composer cache via host-volume
       - ~/.composer-docker/cache:/var/www/.composer/cache:delegated
       - ./:/app
-    user: "${UID}:${GID}"
-    working_dir: /app/backend
+    environment:
+      #XDEBUG_CONFIG: "client_host=host.docker.internal client_port=9003"
+      PHP_IDE_CONFIG: 'serverName=Docker'
+      COMPOSER_HOME: "/var/www/.composer"
     depends_on:
       - mysql
       - elasticsearch
@@ -25,8 +25,10 @@ services:
       # Re-use local composer cache via host-volume
       - ~/.composer-docker/cache:/var/www/.composer/cache:delegated
       - ./:/app
-    user: "${UID}:${GID}"
-    working_dir: /app/frontend
+    environment:
+      #XDEBUG_CONFIG: "client_host=host.docker.internal client_port=9003"
+      PHP_IDE_CONFIG: 'serverName=Docker'
+      COMPOSER_HOME: "/var/www/.composer"
     depends_on:
       - mysql
       - elasticsearch
@@ -87,6 +89,21 @@ services:
     ports:
       - "9100:9100"
 
+  rabbitmq:
+    container_name: indexy-rabbitmq
+    hostname: ${RABBITMQ_HOST}
+    restart: always
+    image: rabbitmq:3-management
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "${RABBITMQ_PORT}:${RABBITMQ_PORT}"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648 log_levels [{connection,error},{default,error}]
 volumes:
   mysql_data:
   grafana_data:
+  rabbitmq_data:
