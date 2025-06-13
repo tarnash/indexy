@@ -99,11 +99,95 @@ services:
     ports:
       - "${RABBITMQ_PORT}:${RABBITMQ_PORT}"
       - "15672:15672"
+    networks:
+      - rabbitmq-cluster
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
       - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648 log_levels [{connection,error},{default,error}]
+
+  rabbitmq1:
+    container_name: indexy-rabbitmq1
+    hostname: rabbitmq1
+    restart: always
+    image: rabbitmq:3-management
+    volumes:
+      - rabbitmq_data-1:/var/lib/rabbitmq
+      - ./enabled_plugins:/etc/rabbitmq/enabled_plugins
+    ports:
+      - "5673:5672"
+      - "15675:15672"
+    networks:
+      - rabbitmq-cluster
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
+      - RABBITMQ_ERLANG_COOKIE=${RABBITMQ_COOKIE}
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648 log_levels [{connection,error},{default,error}]
+
+  rabbitmq2:
+    container_name: indexy-rabbitmq2
+    hostname: rabbitmq2
+    restart: always
+    image: rabbitmq:3-management
+    volumes:
+      - rabbitmq_data-2:/var/lib/rabbitmq
+      - ./enabled_plugins:/etc/rabbitmq/enabled_plugins
+    ports:
+      - "5674:5672"
+      - "15673:15672"
+    networks:
+      - rabbitmq-cluster
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
+      - RABBITMQ_ERLANG_COOKIE=${RABBITMQ_COOKIE}
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648 log_levels [{connection,error},{default,error}]
+
+  rabbitmq3:
+    container_name: indexy-rabbitmq3
+    hostname: rabbitmq3
+    restart: always
+    image: rabbitmq:3-management
+    volumes:
+      - rabbitmq_data-3:/var/lib/rabbitmq
+      - ./enabled_plugins:/etc/rabbitmq/enabled_plugins
+    ports:
+      - "5675:5672"
+      - "15674:15672"
+    networks:
+      - rabbitmq-cluster
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
+      - RABBITMQ_ERLANG_COOKIE=${RABBITMQ_COOKIE}
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648 log_levels [{connection,error},{default,error}]
+
+  haproxy:
+    container_name: indexy-haproxy
+    image: haproxy:2.6.6-alpine
+    restart: always
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    ports:
+      - "15671:15672"
+      - "5670:5672"
+    networks:
+      - rabbitmq-cluster
+    links:
+      - rabbitmq1
+      - rabbitmq2
+      - rabbitmq3
+
 volumes:
   mysql_data:
   grafana_data:
   rabbitmq_data:
+  rabbitmq_data-1:
+  rabbitmq_data-2:
+  rabbitmq_data-3:
+
+networks:
+  rabbitmq-cluster:
+    driver: bridge
+
